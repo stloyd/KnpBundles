@@ -210,7 +210,11 @@ class Updater
     {
         $this->output->writeln(sprintf('[%s] Will now update commits, files and tags', $this->currentTime()));
         // Now update repos with more precise GitHub data
+        /** @var $bundle Bundle */
         foreach (array_reverse($this->bundles) as $bundle) {
+            if (Bundle::STATE_DELETED_BY_OWNER === $bundle->getState()) {
+                continue;
+            }
             if ($this->em->getUnitOfWork()->getEntityState($bundle) != UnitOfWork::STATE_MANAGED) {
                 continue;
             }
@@ -255,7 +259,7 @@ class Updater
 
         $counter = 0;
         foreach ($this->bundles as $key => $bundle) {
-            /** @var $bundle \Knp\Bundle\KnpBundlesBundle\Entity\Bundle */
+            /** @var $bundle Bundle */
             $this->githubRepoApi->updateFiles($bundle, array('sf'));
             if (!$bundle->isValid()) {
                 if (!$this->removeRepo($bundle)) {

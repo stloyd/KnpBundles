@@ -9,6 +9,8 @@ use Symfony\Component\HttpKernel\Log\LoggerInterface;
 
 use Doctrine\Common\Persistence\ObjectManager;
 
+use Knp\Bundle\KnpBundlesBundle\Entity\Bundle;
+
 class GithubHookConsumer implements ConsumerInterface
 {
     /**
@@ -66,6 +68,10 @@ class GithubHookConsumer implements ConsumerInterface
                 );
             }
 
+            return;
+        }
+
+        if (Bundle::STATE_DELETED_BY_OWNER === $bundle->getState()) {
             return;
         }
 

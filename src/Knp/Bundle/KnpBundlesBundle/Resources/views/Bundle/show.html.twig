@@ -272,6 +272,15 @@
     </div>
 
     <div class="modal-body">
+        {#% if app.user == bundle.user %#}
+        <p style="float: right; width: 125px;">
+            <label>
+                <input type="radio" name="state" id="state4" value="deleted by owner"{{ bundle.state == 'deleted by owner' ? ' checked="checked"' : '' }}>
+                <span>Remove this bundle from <strong>KnpBundles.com</strong></span>
+            </label>
+        </p>
+        {#% endif %#}
+
         <ul style="margin: 0 auto; width: 125px;">
             <li>
                 <label>

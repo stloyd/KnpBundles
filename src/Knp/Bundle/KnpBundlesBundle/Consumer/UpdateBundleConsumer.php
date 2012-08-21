@@ -43,31 +43,31 @@ class UpdateBundleConsumer implements ConsumerInterface
     private $em;
 
     /**
-     * @var Knp\Bundle\KnpBundlesBundle\Entity\UserManager
+     * @var UserManager
      */
     private $users;
 
     /**
-     * @var Knp\Bundle\KnpBundlesBundle\Indexer\SolrIndexer
+     * @var SolrIndexer
      */
     private $indexer;
 
     /**
-     * @var Knp\Bundle\KnpBundlesBundle\Github\Repo
+     * @var Repo
      */
     private $githubRepoApi;
 
     /**
-     * @var Knp\Bundle\KnpBundlesBundle\Travis\Travis
+     * @var Travis
      */
     private $travis;
 
     /**
-     * @param ObjectManager  $em
-     * @param UserManager    $users
-     * @param Repo           $githubRepoApi
-     * @param Travis         $travis
-     * @param SolrIndexer    $indexer
+     * @param ObjectManager $em
+     * @param UserManager   $users
+     * @param Repo          $githubRepoApi
+     * @param Travis        $travis
+     * @param SolrIndexer   $indexer
      */
     public function __construct(ObjectManager $em, UserManager $users, Repo $githubRepoApi, Travis $travis, SolrIndexer $indexer)
     {
@@ -116,6 +116,10 @@ class UpdateBundleConsumer implements ConsumerInterface
                 $this->logger->warn(sprintf('Unable to retrieve bundle #%d', $message['bundle_id']));
             }
 
+            return;
+        }
+
+        if (Bundle::STATE_DELETED_BY_OWNER === $bundle->getState()) {
             return;
         }
 

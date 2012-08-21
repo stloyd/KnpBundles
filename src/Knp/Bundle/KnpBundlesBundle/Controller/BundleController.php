@@ -195,12 +195,17 @@ class BundleController extends BaseController
                 list($username, $name) = explode('/', $bundle);
 
                 $url = $this->generateUrl('bundle_show', array('username' => $username, 'name' => $name));
-                if ($this->getRepository('Bundle')->findOneByUsernameAndName($username, $name)) {
+                /* @var $found Bundle */
+                if ($found = $this->getRepository('Bundle')->findOneByUsernameAndName($username, $name)) {
                     if (!$request->isXmlHttpRequest()) {
                         return $this->redirect($url);
                     } else {
-                        $error   = true;
-                        $message = 'Specified bundle already <a href="'.$url.'">exists</a> at KnpBundles.com!';
+                        $error = true;
+                        if (Bundle::STATE_DELETED_BY_OWNER === $found->getState()) {
+                            $message = 'Owner of the <strong>'.$url.'</strong> declined listing it at KnpBundles.com!';
+                        } else {
+                            $message = 'Specified bundle already <a href="'.$url.'">exists</a> at KnpBundles.com!';
+                        }
                     }
                 }
 
@@ -270,6 +275,34 @@ class BundleController extends BaseController
         $em->flush();
 
         return $this->redirect($this->generateUrl('bundle_show', $params));
+    }
+
+    public function removeBundleAction($username, $name)
+    {
+        /* @var $bundle Bundle */
+        $bundle = $this->getRepository('Bundle')->findOneByUsernameAndName($username, $name);
+        if (!$bundle) {
+            throw new NotFoundHttpException(sprintf('The bundle "%s/%s" does not exist', $username, $name));
+        }
+
+        $url = $this->generateUrl('bundle_show', array('username' => $username, 'name' => $name));
+
+        /* @var $user User */
+        if (!$user = $this->get('security.context')->getToken()->getUser()) {
+            return $this->redirect($url);
+        }
+
+        if (!$bundle->getUser()->isEqualTo($user)) {
+            return $this->redirect($url);
+        }
+
+        $bundle->setState(Bundle::STATE_DELETED_BY_OWNER);
+
+        $em = $this->get('doctrine')->getEntityManager();
+        $em->persist($bundle);
+        $em->flush();
+
+        return $this->redirect($this->generateUrl('bundle_list'));
     }
 
     public function searchByKeywordAction(Request $request, $slug)

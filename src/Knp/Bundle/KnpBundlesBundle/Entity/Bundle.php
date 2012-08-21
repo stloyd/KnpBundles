@@ -25,10 +25,11 @@ use Pagerfanta\Adapter\DoctrineCollectionAdapter;
  */
 class Bundle
 {
-    const STATE_UNKNOWN       = 'unknown';
-    const STATE_NOT_YET_READY = 'not yet ready';
-    const STATE_READY         = 'ready';
-    const STATE_DEPRECATED    = 'deprecated';
+    const STATE_UNKNOWN          = 'unknown';
+    const STATE_NOT_YET_READY    = 'not yet ready';
+    const STATE_READY            = 'ready';
+    const STATE_DEPRECATED       = 'deprecated';
+    const STATE_DELETED_BY_OWNER = 'deleted by owner';
 
     /**
      * @ORM\Column(name="id", type="integer")
@@ -97,7 +98,7 @@ class Bundle
      *
      * @ORM\Column(type="text", nullable=true)
      */
-    protected $canonicalConfig = null;
+    protected $canonicalConfig;
 
     /**
      * The bundle readme text extracted from source code
@@ -274,7 +275,7 @@ class Bundle
     /**
      * @ORM\Column(type="integer")
      */
-    protected $nbRecommenders;
+    protected $nbRecommenders = 0;
 
     /**
      * Date when bundle was tweeted from knplabs account.
@@ -306,8 +307,6 @@ class Bundle
         $this->contributors = new ArrayCollection();
         $this->scores = new ArrayCollection();
         $this->keywords = new ArrayCollection();
-        $this->state = self::STATE_UNKNOWN;
-        $this->nbRecommenders = 0;
     }
 
     /**
@@ -495,9 +494,11 @@ class Bundle
         }
         $this->lastCommits = serialize($lastCommits);
 
-        $lastCommitAt = new \DateTime();
-        $lastCommitAt->setTimestamp(strtotime($lastCommits[0]['commit']['committer']['date']));
-        $this->setLastCommitAt($lastCommitAt);
+        if (!empty($lastCommits)) {
+            $lastCommitAt = new \DateTime();
+            $lastCommitAt->setTimestamp(strtotime($lastCommits[0]['commit']['committer']['date']));
+            $this->setLastCommitAt($lastCommitAt);
+        }
     }
 
     /**
@@ -936,11 +937,11 @@ class Bundle
     /**
      * Set status of bundle
      *
-     * @param string
+     * @param string $state
      */
     public function setState($state)
     {
-        if (!in_array($state, array(self::STATE_UNKNOWN, self::STATE_NOT_YET_READY, self::STATE_READY, self::STATE_DEPRECATED))) {
+        if (!in_array($state, array(self::STATE_UNKNOWN, self::STATE_NOT_YET_READY, self::STATE_READY, self::STATE_DEPRECATED, self::STATE_DELETED_BY_OWNER))) {
             $state = self::STATE_UNKNOWN;
         }
 
@@ -1122,6 +1123,11 @@ class Bundle
         if (!$this->hasKeyword($keyword)) {
             $this->keywords[] = $keyword;
         }
+    }
+
+    public function removeKeyword(Keyword $keyword)
+    {
+        $this->keywords->removeElement($keyword);
     }
 
     /**
